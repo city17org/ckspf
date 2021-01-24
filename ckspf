@@ -20,27 +20,27 @@ die()
 	exit 1
 }
 
-lookup_spf()
+lookup_spf_record()
 {
 	local _domain=$1 _i
 	[ -n "${_domain}" ] || die "usage: ${0##*/} domain"
 
 	dig +short ${_domain} txt \
-	  | grep -i v=spf1 \
+	  | grep v=spf1 \
 	  | tr ' ' '\n' \
 	  | sed 's/[+"]//g' \
  	  | while read -r _i; do
 		case ${_i} in
-			ip[46]*)    echo ${_i#*:};;
-			include*)   lookup_spf ${_i#*:};;
-			redirect*)  lookup_spf ${_i#*=};;
-			a|mx)       resolve_${_i}_record ${_domain};;
-			a:*|mx:*)   resolve_${_i%:*}_record ${_i#*:};;
+		ip[46]:*)   echo ${_i#*:} ;;
+		include:*)  lookup_spf_record ${_i#*:} ;;
+		redirect=*) lookup_spf_record ${_i#*=} ;;
+		a|mx)       lookup_${_i}_record ${_domain} ;;
+		a:*|mx:*)   lookup_${_i%:*}_record ${_i#*:} ;;
 		esac
 	done
 }
 
-resolve_a_record()
+lookup_a_record()
 {
 	local _domain=$1
 	[ -n "${_domain}" ] || return
@@ -48,7 +48,7 @@ resolve_a_record()
 	dig +short ${_domain} a | grep -v '\.$'
 }
 
-resolve_mx_record()
+lookup_mx_record()
 {
 	local _domain=$1 _i
 	[ -n "${_domain}" ] || return
@@ -56,9 +56,9 @@ resolve_mx_record()
 	dig +short ${_domain} mx \
 	  | sed 's#.* \(.*\).$#\1#' \
 	  | while read -r _i; do
-		[ -n "${_i}" ] && resolve_a_record ${_i}
+		[ -n "${_i}" ] && lookup_a_record ${_i}
 	done
 }
 
 command -v dig >/dev/null || die "${0##*/}: dig: command not found"
-lookup_spf $1
+lookup_spf_record $1
