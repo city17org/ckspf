@@ -31,8 +31,8 @@ lookup_spf_record()
 
 	dig +short ${_domain} txt \
 	  | grep v=spf1 \
-	  | tr ' ' '\n' \
 	  | sed 's/[+"]//g' \
+	  | tr ' ' '\n' \
  	  | while read -r _i; do
 		case ${_i} in
 		ip[46]:*)   echo ${_i#*:} ;;
