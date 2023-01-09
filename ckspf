@@ -20,10 +20,14 @@ die()
 	exit 1
 }
 
+usage()
+{
+	die "usage: ${0##*/} domain"
+}
+
 lookup_spf_record()
 {
 	local _domain=$1 _i
-	[ -n "${_domain}" ] || die "usage: ${0##*/} domain"
 
 	dig +short ${_domain} txt \
 	  | grep v=spf1 \
@@ -60,5 +64,12 @@ lookup_mx_record()
 	done
 }
 
-command -v dig >/dev/null || die "${0##*/}: dig: command not found"
-lookup_spf_record $1
+if [ "$#" -ne 1 ]; then
+	usage
+fi
+
+if ! command -v dig >/dev/null; then
+	die "${0##*/}: dig: command not found"
+fi
+
+lookup_spf_record "$1"
